@@ -1,1 +1,46 @@
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+
+# 설정: 이온 및 물 분자의 위치
+h_pos = np.array([[-4, 1], [-2, 1], [0, 1], [2, 1], [4, 1]])  # H+ 이온 좌표
+oh_pos = np.array([[-3, -1], [-1, -1], [1, -1]])  # OH- 이온 좌표
+water_molecules = []  # 생성된 물 분자 위치
+
+# 애니메이션 초기 설정
+fig, ax = plt.subplots()
+ax.set_xlim(-5, 5)
+ax.set_ylim(-3, 3)
+
+# 이온과 물 분자 그리기
+h_dots, = ax.plot(h_pos[:, 0], h_pos[:, 1], 'ro', label="H⁺ (수소 이온)")
+oh_dots, = ax.plot(oh_pos[:, 0], oh_pos[:, 1], 'bo', label="OH⁻ (수산화 이온)")
+water_dots, = ax.plot([], [], 'go', label="H₂O (물 분자)")
+
+ax.legend()
+
+# 애니메이션 업데이트 함수
+def update(frame):
+    global h_pos, oh_pos, water_molecules
+    if frame < min(len(h_pos), len(oh_pos)):  # 중화 반응 가능할 때
+        # H+와 OH- 이온이 중화되어 물 분자 생성
+        new_water = [(h_pos[frame, 0] + oh_pos[frame, 0]) / 2, 0]  # 가운데 위치에 물 분자 생성
+        water_molecules.append(new_water)
+
+        # 결합한 이온 제거
+        h_pos[frame, 1] = np.nan  # 결합된 H+ 제거
+        oh_pos[frame, 1] = np.nan  # 결합된 OH- 제거
+
+        # 그래프 업데이트
+        h_dots.set_data(h_pos[:, 0], h_pos[:, 1])
+        oh_dots.set_data(oh_pos[:, 0], oh_pos[:, 1])
+        water_array = np.array(water_molecules)
+        water_dots.set_data(water_array[:, 0], water_array[:, 1])
+
+    return h_dots, oh_dots, water_dots
+
+# 애니메이션 생성
+ani = animation.FuncAnimation(fig, update, frames=5, interval=1000, repeat=False)
+
+plt.show()
 
