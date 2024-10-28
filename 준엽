@@ -1,46 +1,52 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as np
+class Substance:
+    def __init__(self, name, moles):
+        self.name = name  # 물질 이름
+        self.moles = moles  # 초기 몰 수
 
-# 설정: 이온 및 물 분자의 위치
-h_pos = np.array([[-4, 1], [-2, 1], [0, 1], [2, 1], [4, 1]])  # H+ 이온 좌표
-oh_pos = np.array([[-3, -1], [-1, -1], [1, -1]])  # OH- 이온 좌표
-water_molecules = []  # 생성된 물 분자 위치
+    def react(self, other, ratio_self=1, ratio_other=1):
+        """
+        두 물질이 정해진 비율로 반응하여 몰 수를 변화시킵니다.
+        ratio_self: 현재 물질의 반응 비율
+        ratio_other: 반응할 다른 물질의 비율
+        """
+        # 반응 가능한 최소 몰 수를 계산
+        limiting_moles = min(self.moles / ratio_self, other.moles / ratio_other)
+        
+        # 각 물질의 몰 수 감소
+        self.moles -= limiting_moles * ratio_self
+        other.moles -= limiting_moles * ratio_other
+        
+        return limiting_moles  # 반응한 몰 수 반환
 
-# 애니메이션 초기 설정
-fig, ax = plt.subplots()
-ax.set_xlim(-5, 5)
-ax.set_ylim(-3, 3)
+def main():
+    # 사용자로부터 산과 염기의 몰 수를 입력받음
+    try:
+        acid_moles = float(input("산(HCl)의 몰 수를 입력하세요: "))
+        base_moles = float(input("염기(NaOH)의 몰 수를 입력하세요: "))
+        
+        # 물질 객체 생성
+        acid = Substance("HCl", acid_moles)
+        base = Substance("NaOH", base_moles)
 
-# 이온과 물 분자 그리기
-h_dots, = ax.plot(h_pos[:, 0], h_pos[:, 1], 'ro', label="H⁺ (수소 이온)")
-oh_dots, = ax.plot(oh_pos[:, 0], oh_pos[:, 1], 'bo', label="OH⁻ (수산화 이온)")
-water_dots, = ax.plot([], [], 'go', label="H₂O (물 분자)")
+        # 중화 반응 실행 (1:1 비율)
+        reacted_moles = acid.react(base, ratio_self=1, ratio_other=1)
 
-ax.legend()
+        # 반응 결과 출력
+        print(f"\n반응한 산(HCl)의 몰 수: {reacted_moles:.2f} 몰")
+        print(f"반응 후 남은 산(HCl): {acid.moles:.2f} 몰")
+        print(f"반응 후 남은 염기(NaOH): {base.moles:.2f} 몰")
 
-# 애니메이션 업데이트 함수
-def update(frame):
-    global h_pos, oh_pos, water_molecules
-    if frame < min(len(h_pos), len(oh_pos)):  # 중화 반응 가능할 때
-        # H+와 OH- 이온이 중화되어 물 분자 생성
-        new_water = [(h_pos[frame, 0] + oh_pos[frame, 0]) / 2, 0]  # 가운데 위치에 물 분자 생성
-        water_molecules.append(new_water)
+        # 완전 중화 여부 확인
+        if acid.moles == 0 and base.moles == 0:
+            print("완전 중화되었습니다.")
+        elif acid.moles > 0:
+            print(f"산이 초과되었습니다. 남은 산: {acid.moles:.2f} 몰")
+        else:
+            print(f"염기가 초과되었습니다. 남은 염기: {base.moles:.2f} 몰")
 
-        # 결합한 이온 제거
-        h_pos[frame, 1] = np.nan  # 결합된 H+ 제거
-        oh_pos[frame, 1] = np.nan  # 결합된 OH- 제거
+    except ValueError:
+        print("잘못된 입력입니다. 숫자를 입력해주세요.")
 
-        # 그래프 업데이트
-        h_dots.set_data(h_pos[:, 0], h_pos[:, 1])
-        oh_dots.set_data(oh_pos[:, 0], oh_pos[:, 1])
-        water_array = np.array(water_molecules)
-        water_dots.set_data(water_array[:, 0], water_array[:, 1])
-
-    return h_dots, oh_dots, water_dots
-
-# 애니메이션 생성
-ani = animation.FuncAnimation(fig, update, frames=5, interval=1000, repeat=False)
-
-plt.show()
-
+# 메인 함수 실행
+if __name__ == "__main__":
+    main()
