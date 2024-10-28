@@ -1,52 +1,70 @@
-class Substance:
-    def __init__(self, name, moles):
-        self.name = name  # 물질 이름
-        self.moles = moles  # 초기 몰 수
+import java.util.Scanner;
 
-    def react(self, other, ratio_self=1, ratio_other=1):
-        """
-        두 물질이 정해진 비율로 반응하여 몰 수를 변화시킵니다.
-        ratio_self: 현재 물질의 반응 비율
-        ratio_other: 반응할 다른 물질의 비율
-        """
-        # 반응 가능한 최소 몰 수를 계산
-        limiting_moles = min(self.moles / ratio_self, other.moles / ratio_other)
+class Substance {
+    private String name;
+    private double moles;
+
+    // 생성자: 물질 이름과 몰 수를 설정
+    public Substance(String name, double moles) {
+        this.name = name;
+        this.moles = moles;
+    }
+
+    // 몰 수 가져오기
+    public double getMoles() {
+        return moles;
+    }
+
+    // 몰 수 설정
+    public void setMoles(double moles) {
+        this.moles = moles;
+    }
+
+    // 반응 메서드
+    public double react(Substance other, double ratioSelf, double ratioOther) {
+        // 반응 가능한 최대 몰 수 계산
+        double limitingMoles = Math.min(this.moles / ratioSelf, other.getMoles() / ratioOther);
         
-        # 각 물질의 몰 수 감소
-        self.moles -= limiting_moles * ratio_self
-        other.moles -= limiting_moles * ratio_other
+        // 각 물질의 몰 수 감소
+        this.moles -= limitingMoles * ratioSelf;
+        other.setMoles(other.getMoles() - limitingMoles * ratioOther);
         
-        return limiting_moles  # 반응한 몰 수 반환
+        return limitingMoles;  // 반응한 몰 수 반환
+    }
+}
 
-def main():
-    # 사용자로부터 산과 염기의 몰 수를 입력받음
-    try:
-        acid_moles = float(input("산(HCl)의 몰 수를 입력하세요: "))
-        base_moles = float(input("염기(NaOH)의 몰 수를 입력하세요: "))
+public class NeutralizationReaction {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // 사용자로부터 산과 염기의 몰 수 입력받기
+        System.out.print("산(HCl)의 몰 수를 입력하세요: ");
+        double acidMoles = scanner.nextDouble();
         
-        # 물질 객체 생성
-        acid = Substance("HCl", acid_moles)
-        base = Substance("NaOH", base_moles)
+        System.out.print("염기(NaOH)의 몰 수를 입력하세요: ");
+        double baseMoles = scanner.nextDouble();
 
-        # 중화 반응 실행 (1:1 비율)
-        reacted_moles = acid.react(base, ratio_self=1, ratio_other=1)
+        // 물질 객체 생성
+        Substance acid = new Substance("HCl", acidMoles);
+        Substance base = new Substance("NaOH", baseMoles);
 
-        # 반응 결과 출력
-        print(f"\n반응한 산(HCl)의 몰 수: {reacted_moles:.2f} 몰")
-        print(f"반응 후 남은 산(HCl): {acid.moles:.2f} 몰")
-        print(f"반응 후 남은 염기(NaOH): {base.moles:.2f} 몰")
+        // 중화 반응 실행 (1:1 비율)
+        double reactedMoles = acid.react(base, 1, 1);
 
-        # 완전 중화 여부 확인
-        if acid.moles == 0 and base.moles == 0:
-            print("완전 중화되었습니다.")
-        elif acid.moles > 0:
-            print(f"산이 초과되었습니다. 남은 산: {acid.moles:.2f} 몰")
-        else:
-            print(f"염기가 초과되었습니다. 남은 염기: {base.moles:.2f} 몰")
+        // 반응 결과 출력
+        System.out.printf("\n반응한 산(HCl)의 몰 수: %.2f 몰\n", reactedMoles);
+        System.out.printf("반응 후 남은 산(HCl): %.2f 몰\n", acid.getMoles());
+        System.out.printf("반응 후 남은 염기(NaOH): %.2f 몰\n", base.getMoles());
 
-    except ValueError:
-        print("잘못된 입력입니다. 숫자를 입력해주세요.")
+        // 완전 중화 여부 확인
+        if (acid.getMoles() == 0 && base.getMoles() == 0) {
+            System.out.println("완전 중화되었습니다.");
+        } else if (acid.getMoles() > 0) {
+            System.out.printf("산이 초과되었습니다. 남은 산: %.2f 몰\n", acid.getMoles());
+        } else {
+            System.out.printf("염기가 초과되었습니다. 남은 염기: %.2f 몰\n", base.getMoles());
+        }
 
-# 메인 함수 실행
-if __name__ == "__main__":
-    main()
+        scanner.close();
+    }
+}
