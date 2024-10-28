@@ -1,70 +1,125 @@
-import java.util.Scanner;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-class Substance {
-    private String name;
-    private double moles;
+public class NeutralizationSimulation extends JFrame {
+    private JTextField hIonInput;
+    private JTextField ohIonInput;
+    private JTextArea resultArea;
+    private JPanel reactionPanel;
 
-    // 생성자: 물질 이름과 몰 수를 설정
-    public Substance(String name, double moles) {
-        this.name = name;
-        this.moles = moles;
-    }
+    public NeutralizationSimulation() {
+        setTitle("중화 반응 시뮬레이션");
+        setSize(400, 500);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-    // 몰 수 가져오기
-    public double getMoles() {
-        return moles;
-    }
-
-    // 몰 수 설정
-    public void setMoles(double moles) {
-        this.moles = moles;
-    }
-
-    // 반응 메서드
-    public double react(Substance other, double ratioSelf, double ratioOther) {
-        // 반응 가능한 최대 몰 수 계산
-        double limitingMoles = Math.min(this.moles / ratioSelf, other.getMoles() / ratioOther);
+        // 입력 패널
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridLayout(3, 2));
+        inputPanel.add(new JLabel("H⁺ 이온의 개수:"));
+        hIonInput = new JTextField();
+        inputPanel.add(hIonInput);
+        inputPanel.add(new JLabel("OH⁻ 이온의 개수:"));
+        ohIonInput = new JTextField();
+        inputPanel.add(ohIonInput);
         
-        // 각 물질의 몰 수 감소
-        this.moles -= limitingMoles * ratioSelf;
-        other.setMoles(other.getMoles() - limitingMoles * ratioOther);
-        
-        return limitingMoles;  // 반응한 몰 수 반환
+        JButton simulateButton = new JButton("시뮬레이션 시작");
+        inputPanel.add(simulateButton);
+
+        add(inputPanel, BorderLayout.NORTH);
+
+        // 결과 표시 패널
+        resultArea = new JTextArea();
+        resultArea.setEditable(false);
+        add(new JScrollPane(resultArea), BorderLayout.CENTER);
+
+        // 반응 시각화 패널
+        reactionPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                drawReaction(g);
+            }
+        };
+        reactionPanel.setPreferredSize(new Dimension(400, 200));
+        add(reactionPanel, BorderLayout.SOUTH);
+
+        // 버튼 액션 리스너
+        simulateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                startSimulation();
+            }
+        });
     }
-}
 
-public class NeutralizationReaction {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    // 시뮬레이션 시작 메서드
+    private void startSimulation() {
+        try {
+            int hCount = Integer.parseInt(hIonInput.getText());
+            int ohCount = Integer.parseInt(ohIonInput.getText());
 
-        // 사용자로부터 산과 염기의 몰 수 입력받기
-        System.out.print("산(HCl)의 몰 수를 입력하세요: ");
-        double acidMoles = scanner.nextDouble();
-        
-        System.out.print("염기(NaOH)의 몰 수를 입력하세요: ");
-        double baseMoles = scanner.nextDouble();
+            // 계산
+            int waterMolecules = Math.min(hCount, ohCount);  // 생성된 물 분자 수
+            int remainingH = hCount - waterMolecules;        // 남은 H⁺ 이온 수
+            int remainingOH = ohCount - waterMolecules;      // 남은 OH⁻ 이온 수
 
-        // 물질 객체 생성
-        Substance acid = new Substance("HCl", acidMoles);
-        Substance base = new Substance("NaOH", baseMoles);
+            // 결과 텍스트 출력
+            resultArea.setText("중화 반응 결과:\n");
+            resultArea.append("생성된 물 분자 (H₂O) 수: " + waterMolecules + "\n");
+            resultArea.append("남은 H⁺ 이온 수: " + remainingH + "\n");
+            resultArea.append("남은 OH⁻ 이온 수: " + remainingOH + "\n");
 
-        // 중화 반응 실행 (1:1 비율)
-        double reactedMoles = acid.react(base, 1, 1);
+            // 시각화 패널 업데이트
+            reactionPanel.repaint();
 
-        // 반응 결과 출력
-        System.out.printf("\n반응한 산(HCl)의 몰 수: %.2f 몰\n", reactedMoles);
-        System.out.printf("반응 후 남은 산(HCl): %.2f 몰\n", acid.getMoles());
-        System.out.printf("반응 후 남은 염기(NaOH): %.2f 몰\n", base.getMoles());
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "올바른 숫자를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-        // 완전 중화 여부 확인
-        if (acid.getMoles() == 0 && base.getMoles() == 0) {
-            System.out.println("완전 중화되었습니다.");
-        } else if (acid.getMoles() > 0) {
-            System.out.printf("산이 초과되었습니다. 남은 산: %.2f 몰\n", acid.getMoles());
-        } else {
-            System.out.printf("염기가 초과되었습니다. 남은 염기: %.2f 몰\n", base.getMoles());
+    // 반응 시각화 메서드
+    private void drawReaction(Graphics g) {
+        int hCount = Integer.parseInt(hIonInput.getText());
+        int ohCount = Integer.parseInt(ohIonInput.getText());
+        int waterMolecules = Math.min(hCount, ohCount);
+
+        // 초기 위치 설정
+        int startX = 20, startY = 20;
+        int gap = 40;
+
+        // H⁺ 이온 그리기 (빨간색 원)
+        g.setColor(Color.RED);
+        for (int i = 0; i < hCount; i++) {
+            if (i < waterMolecules) { // 반응한 이온은 중앙으로 이동
+                g.fillOval(startX + i * gap, startY, 20, 20);
+            } else { // 남은 이온은 오른쪽에 배치
+                g.fillOval(startX + (i - waterMolecules) * gap, startY + 40, 20, 20);
+            }
         }
 
-        scanner.close();
+        // OH⁻ 이온 그리기 (파란색 원)
+        g.setColor(Color.BLUE);
+        for (int i = 0; i < ohCount; i++) {
+            if (i < waterMolecules) { // 반응한 이온은 중앙으로 이동
+                g.fillOval(startX + i * gap, startY + 80, 20, 20);
+            } else { // 남은 이온은 아래쪽에 배치
+                g.fillOval(startX + (i - waterMolecules) * gap, startY + 120, 20, 20);
+            }
+        }
+
+        // 생성된 물 분자 그리기 (녹색 원)
+        g.setColor(Color.GREEN);
+        for (int i = 0; i < waterMolecules; i++) {
+            g.fillOval(startX + i * gap, startY + 160, 20, 20);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new NeutralizationSimulation().setVisible(true);
+        });
     }
 }
