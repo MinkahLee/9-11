@@ -1,0 +1,84 @@
+!pip install matplotlib pandas plotly --quiet
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+# 중화 반응 함수
+def neutralization_reaction(hcl_conc, hcl_vol, naoh_conc, naoh_vol):
+    hcl_moles = hcl_conc * hcl_vol
+    naoh_moles = naoh_conc * naoh_vol
+    water_moles = min(hcl_moles, naoh_moles)
+    
+    if hcl_moles > naoh_moles:
+        excess = 'HCl Excess'
+        excess_moles = hcl_moles - naoh_moles
+    elif naoh_moles > hcl_moles:
+        excess = 'NaOH Excess'
+        excess_moles = naoh_moles - hcl_moles
+    else:
+        excess = 'Neutralized'
+        excess_moles = 0
+
+    return {
+        'HCl Moles': hcl_moles,
+        'NaOH Moles': naoh_moles,
+        'Water Moles': water_moles,
+        'Reaction Status': excess,
+        'Excess Moles': excess_moles
+    }
+
+# 실험 데이터 생성
+hcl_concentrations = np.linspace(0.1, 2.0, 10)  # HCl 농도: 0.1~2.0 mol/L
+naoh_concentrations = np.linspace(0.1, 2.0, 10)  # NaOH 농도: 0.1~2.0 mol/L
+volumes = np.linspace(0.1, 1.0, 5)  # 부피: 0.1~1.0 L
+
+results = []
+
+# 반복 실험
+for hcl_conc in hcl_concentrations:
+    for naoh_conc in naoh_concentrations:
+        for hcl_vol in volumes:
+            for naoh_vol in volumes:
+                result = neutralization_reaction(hcl_conc, hcl_vol, naoh_conc, naoh_vol)
+                result.update({
+                    'HCl Concentration': hcl_conc,
+                    'HCl Volume': hcl_vol,
+                    'NaOH Concentration': naoh_conc,
+                    'NaOH Volume': naoh_vol
+                })
+                results.append(result)
+
+# 데이터프레임 생성
+df = pd.DataFrame(results)
+
+# 결과 테이블 출력
+print("==== 실험 데이터 (상위 10개) ====")
+print(df.head(10))
+
+# 데이터 시각화 (Plotly 사용)
+fig = px.scatter(
+    df,
+    x='HCl Moles',
+    y='NaOH Moles',
+    size='Water Moles',
+    color='Reaction Status',
+    hover_data=['Excess Moles', 'HCl Concentration', 'NaOH Concentration'],
+    title='중화 반응 실험 결과',
+    labels={'HCl Moles': 'HCl 몰 수', 'NaOH Moles': 'NaOH 몰 수'}
+)
+fig.show()
+
+# 추가 시각화 (Matplotlib)
+plt.figure(figsize=(10, 6))
+for status in df['Reaction Status'].unique():
+    subset = df[df['Reaction Status'] == status]
+    plt.scatter(subset['HCl Moles'], subset['NaOH Moles'], label=status, alpha=0.7)
+
+plt.title("HCl vs NaOH 중화 반응 결과")
+plt.xlabel("HCl 몰 수")
+plt.ylabel("NaOH 몰 수")
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
