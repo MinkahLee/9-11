@@ -1,125 +1,63 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
 
-public class NeutralizationSimulation extends JFrame {
-    private JTextField hIonInput;
-    private JTextField ohIonInput;
-    private JTextArea resultArea;
-    private JPanel reactionPanel;
+# 초기 데이터 설정
+hcl_positions = [(-4, 2), (-2, 2)]  # H+와 Cl- 이온
+naoh_positions = [(-4, -2), (-2, -2)]  # Na+와 OH- 이온
+water_molecule = []  # 생성된 물 분자 위치
+final_ions = []  # Na+와 Cl-의 최종 위치
 
-    public NeutralizationSimulation() {
-        setTitle("중화 반응 시뮬레이션");
-        setSize(400, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+# 플롯 설정
+fig, ax = plt.subplots()
+ax.set_xlim(-6, 6)
+ax.set_ylim(-4, 4)
 
-        // 입력 패널
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new GridLayout(3, 2));
-        inputPanel.add(new JLabel("H⁺ 이온의 개수:"));
-        hIonInput = new JTextField();
-        inputPanel.add(hIonInput);
-        inputPanel.add(new JLabel("OH⁻ 이온의 개수:"));
-        ohIonInput = new JTextField();
-        inputPanel.add(ohIonInput);
+hcl_scatter, = ax.plot([], [], 'ro', label="HCl (H⁺, Cl⁻)")
+naoh_scatter, = ax.plot([], [], 'bo', label="NaOH (Na⁺, OH⁻)")
+water_scatter, = ax.plot([], [], 'go', label="H₂O (물 분자)")
+final_ions_scatter, = ax.plot([], [], 'mo', label="Na⁺, Cl⁻ (생성 이온)")
+
+ax.legend()
+ax.set_title("중화 반응 시뮬레이션")
+
+# 애니메이션 업데이트 함수
+def update(frame):
+    global hcl_positions, naoh_positions, water_molecule, final_ions
+
+    # 반응 전
+    if frame == 0:
+        hcl_scatter.set_data([p[0] for p in hcl_positions], [p[1] for p in hcl_positions])
+        naoh_scatter.set_data([p[0] for p in naoh_positions], [p[1] for p in naoh_positions])
+        water_scatter.set_data([], [])
+        final_ions_scatter.set_data([], [])
+    
+    # 반응 중
+    elif frame == 1:
+        # H+와 OH- 이온 결합 -> 물 분자 생성
+        h_pos = hcl_positions.pop(0)  # H+ 제거
+        oh_pos = naoh_positions.pop(-1)  # OH- 제거
+        water_molecule = [(h_pos[0] + oh_pos[0]) / 2, (h_pos[1] + oh_pos[1]) / 2]
         
-        JButton simulateButton = new JButton("시뮬레이션 시작");
-        inputPanel.add(simulateButton);
+        # 나머지 Na⁺, Cl⁻ 이온 설정
+        final_ions = [naoh_positions[0], hcl_positions[0]]  # Na⁺, Cl⁻
 
-        add(inputPanel, BorderLayout.NORTH);
+        # 업데이트된 데이터 반영
+        hcl_scatter.set_data([p[0] for p in hcl_positions], [p[1] for p in hcl_positions])
+        naoh_scatter.set_data([p[0] for p in naoh_positions], [p[1] for p in naoh_positions])
+        water_scatter.set_data(water_molecule[0], water_molecule[1])
+        final_ions_scatter.set_data([p[0] for p in final_ions], [p[1] for p in final_ions])
+    
+    # 반응 후
+    elif frame == 2:
+        # 최종 상태만 표시
+        hcl_scatter.set_data([], [])
+        naoh_scatter.set_data([], [])
+        water_scatter.set_data(water_molecule[0], water_molecule[1])
+        final_ions_scatter.set_data([p[0] for p in final_ions], [p[1] for p in final_ions])
 
-        // 결과 표시 패널
-        resultArea = new JTextArea();
-        resultArea.setEditable(false);
-        add(new JScrollPane(resultArea), BorderLayout.CENTER);
+    return hcl_scatter, naoh_scatter, water_scatter, final_ions_scatter
 
-        // 반응 시각화 패널
-        reactionPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                drawReaction(g);
-            }
-        };
-        reactionPanel.setPreferredSize(new Dimension(400, 200));
-        add(reactionPanel, BorderLayout.SOUTH);
-
-        // 버튼 액션 리스너
-        simulateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                startSimulation();
-            }
-        });
-    }
-
-    // 시뮬레이션 시작 메서드
-    private void startSimulation() {
-        try {
-            int hCount = Integer.parseInt(hIonInput.getText());
-            int ohCount = Integer.parseInt(ohIonInput.getText());
-
-            // 계산
-            int waterMolecules = Math.min(hCount, ohCount);  // 생성된 물 분자 수
-            int remainingH = hCount - waterMolecules;        // 남은 H⁺ 이온 수
-            int remainingOH = ohCount - waterMolecules;      // 남은 OH⁻ 이온 수
-
-            // 결과 텍스트 출력
-            resultArea.setText("중화 반응 결과:\n");
-            resultArea.append("생성된 물 분자 (H₂O) 수: " + waterMolecules + "\n");
-            resultArea.append("남은 H⁺ 이온 수: " + remainingH + "\n");
-            resultArea.append("남은 OH⁻ 이온 수: " + remainingOH + "\n");
-
-            // 시각화 패널 업데이트
-            reactionPanel.repaint();
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "올바른 숫자를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    // 반응 시각화 메서드
-    private void drawReaction(Graphics g) {
-        int hCount = Integer.parseInt(hIonInput.getText());
-        int ohCount = Integer.parseInt(ohIonInput.getText());
-        int waterMolecules = Math.min(hCount, ohCount);
-
-        // 초기 위치 설정
-        int startX = 20, startY = 20;
-        int gap = 40;
-
-        // H⁺ 이온 그리기 (빨간색 원)
-        g.setColor(Color.RED);
-        for (int i = 0; i < hCount; i++) {
-            if (i < waterMolecules) { // 반응한 이온은 중앙으로 이동
-                g.fillOval(startX + i * gap, startY, 20, 20);
-            } else { // 남은 이온은 오른쪽에 배치
-                g.fillOval(startX + (i - waterMolecules) * gap, startY + 40, 20, 20);
-            }
-        }
-
-        // OH⁻ 이온 그리기 (파란색 원)
-        g.setColor(Color.BLUE);
-        for (int i = 0; i < ohCount; i++) {
-            if (i < waterMolecules) { // 반응한 이온은 중앙으로 이동
-                g.fillOval(startX + i * gap, startY + 80, 20, 20);
-            } else { // 남은 이온은 아래쪽에 배치
-                g.fillOval(startX + (i - waterMolecules) * gap, startY + 120, 20, 20);
-            }
-        }
-
-        // 생성된 물 분자 그리기 (녹색 원)
-        g.setColor(Color.GREEN);
-        for (int i = 0; i < waterMolecules; i++) {
-            g.fillOval(startX + i * gap, startY + 160, 20, 20);
-        }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new NeutralizationSimulation().setVisible(true);
-        });
-    }
-}
+# 애니메이션 설정
+ani = animation.FuncAnimation(fig, update, frames=3, interval=1000, repeat=False)
+plt.show()
