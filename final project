@@ -82,3 +82,9 @@ plt.ylabel("NaOH 몰 수")
 plt.legend()
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.show()
+
+
+
+
+
+https://colab.research.google.com/drive/1x_l73avGr9lSfiUAU6rtqDFStM_8IG-9#scrollTo=GPMq3b8k9DMV
